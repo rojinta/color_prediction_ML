@@ -1,0 +1,612 @@
+---
+title: "PPG Paint Colors: Final Project"
+subtitle: "Part ii: Regression"
+author: "Rojin Taheri"
+date: "2023-12-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Packages
+
+```{r}
+library(tidyverse)
+library(caret)
+```
+
+## Read Data
+
+```{r}
+df <- readr::read_csv("paint_project_train_data.csv", col_names = TRUE)
+```
+
+```{r}
+df %>% head()
+```
+
+```{r}
+dfii <- df %>% 
+  mutate(y = boot::logit( (response - 0) / (100 - 0) ) ) %>% 
+  select(R, G, B, Lightness, Saturation, Hue, y)
+dfii %>% head()
+```
+
+## Part ii: Regression  
+
+### iiA: Linear Models  
+
+```{r}
+mod01 <- lm(y ~ 1, data = dfii)
+mod02 <- lm(y ~ Lightness + Saturation, data = dfii)
+mod03 <- lm(y ~ R + G + B + Hue, data = dfii)
+mod04 <- lm(y ~ R + G + B + Hue + Lightness + Saturation, data = dfii)
+mod05 <- lm(y ~ (Lightness + Saturation) * (R + G + B + Hue), data = dfii)
+mod06 <- lm(y ~ Lightness + Saturation + (R + G + B + Hue)^2, data = dfii)
+mod07 <- lm(y ~ (Lightness + Saturation) * (R + G + B + Hue)^2, data = dfii)
+mod08 <- lm(y ~ I(R^2) + I(G^2) + I(B) + I(Hue^2), data = dfii)
+mod09 <- lm(y ~ I(R^2) * I(G^2) * I(B) * I(Hue^2), data = dfii)
+mod10 <- lm(y ~ (Lightness + Saturation) * (I(R^2) + I(G^2) + I(B) + I(Hue^2)), data = dfii)
+```
+
+I am using a 10-fold cross validation with 5 repeats to evaluate the models and select the best performing model. I used RMSE as my performance metric.  
+
+```{r}
+set.seed(2001)
+
+my_ctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 5)
+my_metric <- "RMSE"
+
+mod02_cv <- train(y ~ Lightness + Saturation, data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod02_rmse <- mod02_cv$results$RMSE
+
+mod03_cv <- train(y ~ R + G + B + Hue, data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod03_rmse <- mod03_cv$results$RMSE
+
+mod04_cv <- train(y ~ R + G + B + Hue + Lightness + Saturation, data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod04_rmse <- mod04_cv$results$RMSE
+
+mod05_cv <- train(y ~ (Lightness + Saturation) * (R + G + B + Hue), data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod05_rmse <- mod05_cv$results$RMSE
+
+mod06_cv <- train(y ~ Lightness + Saturation + (R + G + B + Hue)^2, data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod06_rmse <- mod06_cv$results$RMSE
+
+mod07_cv <- train(y ~ (Lightness + Saturation) * (R + G + B + Hue)^2, data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod07_rmse <- mod07_cv$results$RMSE
+
+mod08_cv <- train(y ~ I(R^2) + I(G^2) + I(B) + I(Hue^2), data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod08_rmse <- mod08_cv$results$RMSE
+
+mod09_cv <- train(y ~ I(R^2) * I(G^2) * I(B) * I(Hue^2), data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod09_rmse <- mod09_cv$results$RMSE
+
+mod10_cv <- train(y ~ (Lightness + Saturation) * (I(R^2) + I(G^2) + I(B) + I(Hue^2)), data = dfii, method = "lm", preProcess = c("center", "scale"), metric = my_metric, trControl = my_ctrl)
+mod10_rmse <- mod10_cv$results$RMSE
+
+model_names <- c("Model 2", "Model 3", "Model 4", "Model 5", "Model 6", "Model 7", "Model 8", "Model 9", "Model 10")
+
+rmse_values <- c(mod02_rmse, mod03_rmse, mod04_rmse, mod05_rmse, mod06_rmse, mod07_rmse, mod08_rmse, mod09_rmse, mod10_rmse)
+  
+model_rmse <- data.frame(Model = model_names, RMSE = rmse_values)
+model_rmse
+```
+
+Models 7, 9, and 5 are identified as the top 3 performing models, with Model 7 being the best model.
+
+Visualizing coefficient summaries for the top 3 models:
+
+```{r}
+coefplot::coefplot(mod07)
+coefplot::coefplot(mod09)
+coefplot::coefplot(mod05)
+```
+
+In all 3 models, a majority of the coefficients are almost zero and only a few number of the coefficients seem important in the models.  
+
+### iiB: Bayesian Linear Models  
+
+I am choosing Model 7, the best identified model from the previous part, and Model 5, because this model also has a very low RMSE and is a lot less complex than Model 7.  
+
+```{r}
+library(rstanarm)
+```
+
+```{r}
+mod07_bayesian <- stan_lm(y ~ (Lightness + Saturation) * (R + G + B + Hue)^2, data = dfii, prior = NULL)
+mod05_bayesian <- stan_lm(y ~ (Lightness + Saturation) * (R + G + B + Hue), data = dfii, prior = NULL)
+```
+
+To evaluate and compare the 2 models, I am using the leave-one-out cross validation method.
+
+```{r}
+library(loo)
+```
+
+```{r}
+loo(mod07_bayesian)
+```
+
+```{r}
+loo(mod05_bayesian)
+```
+
+```{r}
+loo_compare(loo(mod07_bayesian), loo(mod05_bayesian))
+```
+
+The lower elpd_loo and looic values for Model 7, shows better predictive performance for model 7 overall. However, the significantly higher p_loo value for Model 7, demonstrates the high complexity of this model as well.  
+We will visualize the regression coefficient posterior summary for Model 7 next.  
+
+```{r}
+plot(mod07_bayesian)
+```
+
+### iiC: Linear Models Predictions  
+
+We will start with visualizing the predictive trends for Model 7.  
+
+Choosing R as the primary input and G as the secondary input, keeping B and Hue at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":  
+
+```{r}
+mean_B <- mean(df$B)
+mean_Hue <- mean(df$Hue)
+
+prediction_data <- expand.grid(R = seq(min(df$R), max(df$R), length.out = 100),
+                               G = seq(min(df$G), max(df$G), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               B = mean_B, 
+                               Hue = mean_Hue)
+
+prediction_data$pred_mod07 <- predict(mod07, prediction_data, type = "response")
+
+confint_mod07 <- predict(mod07, prediction_data, interval = "confidence")
+predint_mod07 <- predict(mod07, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod07[, "lwr"]
+prediction_data$upper_conf <- confint_mod07[, "upr"]
+prediction_data$lower_pred <- predint_mod07[, "lwr"]
+prediction_data$upper_pred <- predint_mod07[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = R, y = pred_mod07)) +
+  geom_line() +
+  facet_wrap(~ G) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = 'grey') +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = R, Secondary Input = G", x = "R", y = "Predicted Response")
+```
+
+Choosing R as the primary input and B as the secondary input, keeping G and Hue at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":
+
+```{r}
+mean_G <- mean(df$G)
+mean_Hue <- mean(df$Hue)
+
+prediction_data <- expand.grid(R = seq(min(df$R), max(df$R), length.out = 100),
+                               B = seq(min(df$B), max(df$B), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               G = mean_G, 
+                               Hue = mean_Hue)
+
+prediction_data$pred_mod07 <- predict(mod07, prediction_data, type = "response")
+
+confint_mod07 <- predict(mod07, prediction_data, interval = "confidence")
+predint_mod07 <- predict(mod07, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod07[, "lwr"]
+prediction_data$upper_conf <- confint_mod07[, "upr"]
+prediction_data$lower_pred <- predint_mod07[, "lwr"]
+prediction_data$upper_pred <- predint_mod07[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = R, y = pred_mod07)) +
+  geom_line() +
+  facet_wrap(~ B) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = "grey") +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = R, Secondary Input = B", x = "R", y = "Predicted Response")
+```
+
+Choosing R as the primary input and Hue as the secondary input, keeping G and B at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":
+
+```{r}
+mean_G <- mean(df$G)
+mean_B <- mean(df$B)
+
+prediction_data <- expand.grid(R = seq(min(df$R), max(df$R), length.out = 100),
+                               Hue = seq(min(df$Hue), max(df$Hue), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               G = mean_G, 
+                               B = mean_B)
+
+prediction_data$pred_mod07 <- predict(mod07, prediction_data, type = "response")
+
+confint_mod07 <- predict(mod07, prediction_data, interval = "confidence")
+predint_mod07 <- predict(mod07, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod07[, "lwr"]
+prediction_data$upper_conf <- confint_mod07[, "upr"]
+prediction_data$lower_pred <- predint_mod07[, "lwr"]
+prediction_data$upper_pred <- predint_mod07[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = R, y = pred_mod07)) +
+  geom_line() +
+  facet_wrap(~ Hue) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = "grey") +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = R, Secondary Input = Hue", x = "R", y = "Predicted Response")
+```
+
+Choosing G as the primary input and R as the secondary input, keeping B and Hue at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":  
+
+```{r}
+mean_B <- mean(df$B)
+mean_Hue <- mean(df$Hue)
+
+prediction_data <- expand.grid(G = seq(min(df$G), max(df$G), length.out = 100),
+                               R = seq(min(df$R), max(df$R), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               B = mean_B, 
+                               Hue = mean_Hue)
+
+prediction_data$pred_mod07 <- predict(mod07, prediction_data, type = "response")
+
+confint_mod07 <- predict(mod07, prediction_data, interval = "confidence")
+predint_mod07 <- predict(mod07, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod07[, "lwr"]
+prediction_data$upper_conf <- confint_mod07[, "upr"]
+prediction_data$lower_pred <- predint_mod07[, "lwr"]
+prediction_data$upper_pred <- predint_mod07[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = G, y = pred_mod07)) +
+  geom_line() +
+  facet_wrap(~ R) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = 'grey') +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = G, Secondary Input = R", x = "G", y = "Predicted Response")
+```
+
+Choosing G as the primary input and B as the secondary input, keeping R and Hue at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":  
+
+```{r}
+mean_R <- mean(df$R)
+mean_Hue <- mean(df$Hue)
+
+prediction_data <- expand.grid(G = seq(min(df$G), max(df$G), length.out = 100),
+                               B = seq(min(df$B), max(df$B), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               R = mean_R, 
+                               Hue = mean_Hue)
+
+prediction_data$pred_mod07 <- predict(mod07, prediction_data, type = "response")
+
+confint_mod07 <- predict(mod07, prediction_data, interval = "confidence")
+predint_mod07 <- predict(mod07, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod07[, "lwr"]
+prediction_data$upper_conf <- confint_mod07[, "upr"]
+prediction_data$lower_pred <- predint_mod07[, "lwr"]
+prediction_data$upper_pred <- predint_mod07[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = G, y = pred_mod07)) +
+  geom_line() +
+  facet_wrap(~ B) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = 'grey') +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = G, Secondary Input = B", x = "G", y = "Predicted Response")
+```
+
+Choosing G as the primary input and Hue as the secondary input, keeping R and B at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":  
+
+```{r}
+mean_R <- mean(df$R)
+mean_B <- mean(df$B)
+
+prediction_data <- expand.grid(G = seq(min(df$G), max(df$G), length.out = 100),
+                               Hue = seq(min(df$Hue), max(df$Hue), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               R = mean_R, 
+                               B = mean_B)
+
+prediction_data$pred_mod07 <- predict(mod07, prediction_data, type = "response")
+
+confint_mod07 <- predict(mod07, prediction_data, interval = "confidence")
+predint_mod07 <- predict(mod07, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod07[, "lwr"]
+prediction_data$upper_conf <- confint_mod07[, "upr"]
+prediction_data$lower_pred <- predint_mod07[, "lwr"]
+prediction_data$upper_pred <- predint_mod07[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = G, y = pred_mod07)) +
+  geom_line() +
+  facet_wrap(~ Hue) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = 'grey') +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = G, Secondary Input = Hue", x = "G", y = "Predicted Response")
+```
+
+We will then proceed to visualize the predictive trends for Model 5.  
+
+Choosing R as the primary input and G as the secondary input, keeping B and Hue at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral": 
+
+```{r}
+mean_B <- mean(df$B)
+mean_Hue <- mean(df$Hue)
+
+prediction_data <- expand.grid(R = seq(min(df$R), max(df$R), length.out = 100),
+                               G = seq(min(df$G), max(df$G), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               B = mean_B, 
+                               Hue = mean_Hue)
+
+prediction_data$pred_mod05 <- predict(mod05, prediction_data, type = "response")
+
+confint_mod05 <- predict(mod05, prediction_data, interval = "confidence")
+predint_mod05 <- predict(mod05, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod05[, "lwr"]
+prediction_data$upper_conf <- confint_mod05[, "upr"]
+prediction_data$lower_pred <- predint_mod05[, "lwr"]
+prediction_data$upper_pred <- predint_mod05[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = R, y = pred_mod05)) +
+  geom_line() +
+  facet_wrap(~ G) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = 'grey') +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = R, Secondary Input = G", x = "R", y = "Predicted Response")
+```
+
+Choosing R as the primary input and B as the secondary input, keeping G and Hue at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":
+
+```{r}
+mean_G <- mean(df$G)
+mean_Hue <- mean(df$Hue)
+
+prediction_data <- expand.grid(R = seq(min(df$R), max(df$R), length.out = 100),
+                               B = seq(min(df$B), max(df$B), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               G = mean_G, 
+                               Hue = mean_Hue)
+
+prediction_data$pred_mod05 <- predict(mod05, prediction_data, type = "response")
+
+confint_mod05 <- predict(mod05, prediction_data, interval = "confidence")
+predint_mod05 <- predict(mod05, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod05[, "lwr"]
+prediction_data$upper_conf <- confint_mod05[, "upr"]
+prediction_data$lower_pred <- predint_mod05[, "lwr"]
+prediction_data$upper_pred <- predint_mod05[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = R, y = pred_mod05)) +
+  geom_line() +
+  facet_wrap(~ B) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = "grey") +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = R, Secondary Input = B", x = "R", y = "Predicted Response")
+```
+
+Choosing R as the primary input and Hue as the secondary input, keeping G and B at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":
+
+```{r}
+mean_G <- mean(df$G)
+mean_B <- mean(df$B)
+
+prediction_data <- expand.grid(R = seq(min(df$R), max(df$R), length.out = 100),
+                               Hue = seq(min(df$Hue), max(df$Hue), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               G = mean_G, 
+                               B = mean_B)
+
+prediction_data$pred_mod05 <- predict(mod05, prediction_data, type = "response")
+
+confint_mod05 <- predict(mod05, prediction_data, interval = "confidence")
+predint_mod05 <- predict(mod05, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod05[, "lwr"]
+prediction_data$upper_conf <- confint_mod05[, "upr"]
+prediction_data$lower_pred <- predint_mod05[, "lwr"]
+prediction_data$upper_pred <- predint_mod05[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = R, y = pred_mod05)) +
+  geom_line() +
+  facet_wrap(~ Hue) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = "grey") +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = R, Secondary Input = Hue", x = "R", y = "Predicted Response")
+```
+
+Choosing G as the primary input and R as the secondary input, keeping B and Hue at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":  
+
+```{r}
+mean_B <- mean(df$B)
+mean_Hue <- mean(df$Hue)
+
+prediction_data <- expand.grid(G = seq(min(df$G), max(df$G), length.out = 100),
+                               R = seq(min(df$R), max(df$R), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               B = mean_B, 
+                               Hue = mean_Hue)
+
+prediction_data$pred_mod05 <- predict(mod05, prediction_data, type = "response")
+
+confint_mod05 <- predict(mod05, prediction_data, interval = "confidence")
+predint_mod05 <- predict(mod05, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod05[, "lwr"]
+prediction_data$upper_conf <- confint_mod05[, "upr"]
+prediction_data$lower_pred <- predint_mod05[, "lwr"]
+prediction_data$upper_pred <- predint_mod05[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = G, y = pred_mod05)) +
+  geom_line() +
+  facet_wrap(~ R) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = 'grey') +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = G, Secondary Input = R", x = "G", y = "Predicted Response")
+```
+
+Choosing G as the primary input and B as the secondary input, keeping R and Hue at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":  
+
+```{r}
+mean_R <- mean(df$R)
+mean_Hue <- mean(df$Hue)
+
+prediction_data <- expand.grid(G = seq(min(df$G), max(df$G), length.out = 100),
+                               B = seq(min(df$B), max(df$B), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               R = mean_R, 
+                               Hue = mean_Hue)
+
+prediction_data$pred_mod05 <- predict(mod05, prediction_data, type = "response")
+
+confint_mod05 <- predict(mod05, prediction_data, interval = "confidence")
+predint_mod05 <- predict(mod05, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod05[, "lwr"]
+prediction_data$upper_conf <- confint_mod05[, "upr"]
+prediction_data$lower_pred <- predint_mod05[, "lwr"]
+prediction_data$upper_pred <- predint_mod05[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = G, y = pred_mod05)) +
+  geom_line() +
+  facet_wrap(~ B) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = 'grey') +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = G, Secondary Input = B", x = "G", y = "Predicted Response")
+```
+
+Choosing G as the primary input and Hue as the secondary input, keeping R and B at a reference value of their mean, and Lightness and Saturation as, respectively, "midtone" and "neutral":  
+
+```{r}
+mean_R <- mean(df$R)
+mean_B <- mean(df$B)
+
+prediction_data <- expand.grid(G = seq(min(df$G), max(df$G), length.out = 100),
+                               Hue = seq(min(df$Hue), max(df$Hue), length.out = 6),
+                               Lightness = "midtone",
+                               Saturation = "neutral",
+                               R = mean_R, 
+                               B = mean_B)
+
+prediction_data$pred_mod05 <- predict(mod05, prediction_data, type = "response")
+
+confint_mod05 <- predict(mod05, prediction_data, interval = "confidence")
+predint_mod05 <- predict(mod05, prediction_data, interval = "prediction")
+
+prediction_data$lower_conf <- confint_mod05[, "lwr"]
+prediction_data$upper_conf <- confint_mod05[, "upr"]
+prediction_data$lower_pred <- predint_mod05[, "lwr"]
+prediction_data$upper_pred <- predint_mod05[, "upr"]
+
+prediction_data %>%
+  ggplot(mapping = aes(x = G, y = pred_mod05)) +
+  geom_line() +
+  facet_wrap(~ Hue) +
+  geom_ribbon(mapping = aes(ymin = lower_conf, ymax = upper_conf), alpha = 0.5, fill = 'grey') +
+  geom_ribbon(mapping = aes(ymin = lower_pred, ymax = upper_pred), alpha = 0.5, fill = "orange") +
+  labs(title = "Primary Input = G, Secondary Input = Hue", x = "G", y = "Predicted Response")
+```
+
+The predictive trends are close, but not entirely identical for the 2 models. Model 7 has an overall larger prediction and confidence intervals compared to Model 5. The confidence and prediction intervals overlap exactly for both models with all the cases of the primary and secondary inputs!  
+
+### iiD: Train/Tune with Resampling  
+
+```{r}
+library(glmnet)
+library(nnet)
+library(randomForest)
+library(gbm)
+library(e1071)
+library(earth)
+```
+
+```{r}
+set.seed(123)
+
+my_ctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 5)
+my_metric <- "RMSE"
+ 
+## Linear models
+linear_mod01 <- train(y ~ ., data = dfii, method = "lm", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+
+linear_mod02 <- train(y ~ Lightness + Saturation + (R + G + B + Hue)^2, data = dfii, method = "lm", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+
+linear_mod03 <- train(y ~ (Lightness + Saturation) * (R + G + B + Hue), data = dfii, method = "lm", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+
+linear_mod04 <- train(y ~ (Lightness + Saturation) * (R + G + B + Hue)^2, data = dfii, method = "lm", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+
+## Regularized regression with elastic net
+enet_tune_grid <- expand.grid(alpha = seq(0, 1, length = 5), lambda = seq(0.001, 0.1, length = 5))
+
+enet_mod01 <- train(y ~ Lightness + Saturation + (R + G + B + Hue)^2, data = dfii, method = "glmnet", preProcess = c("center", "scale"),  trControl = my_ctrl, metric = my_metric, tuneGrid = enet_tune_grid)
+
+enet_mod02 <- train(y ~ (Lightness + Saturation) * (R + G + B + Hue)^2, data = dfii, method = "glmnet", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric, tuneGrid = enet_tune_grid)
+
+## Neural network
+nn_mod <- train(y ~ ., data = dfii, method = "nnet", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+  
+## Random forest
+rf_mod <- train(y ~ ., data = dfii, method = "rf", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+  
+## Gradient boosted tree
+gbm_mod <- train(y ~ ., data = dfii, method = "gbm", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+  
+## Support vector machines
+svm_mod <- train(y ~ ., data = dfii, method = "svmRadial", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+  
+## Multivariate additive regression splines
+mars_mod <- train(y ~ ., data = dfii, method = "earth", preProcess = c("center", "scale"), trControl = my_ctrl, metric = my_metric)
+```
+
+I will be using the RMSE performance metric to select the best model.  
+
+```{r}
+linear_mod01_rmse <- linear_mod01$results$RMSE
+linear_mod02_rmse <- linear_mod02$results$RMSE
+linear_mod03_rmse <- linear_mod03$results$RMSE
+linear_mod04_rmse <- linear_mod04$results$RMSE
+enet_mod01_rmse <- min(enet_mod01$results$RMSE)
+enet_mod02_rmse <- min(enet_mod02$results$RMSE)
+nn_mod_rmse <- min(nn_mod$results$RMSE)
+rf_mod_rmse <- min(rf_mod$results$RMSE)
+gbm_mod_rmse <- min(gbm_mod$results$RMSE)
+svm_mod_rmse <- min(svm_mod$results$RMSE)
+mars_mod_rmse <- min(mars_mod$results$RMSE)
+
+model_names <- c("Linear 1", "Linear 2", "Linear 3", "Linear 4", "ENet 1", "ENet 2", "NN", "RF", "GBM", "SVM", "MARS")
+
+rmse_values <- c(linear_mod01_rmse, linear_mod02_rmse, linear_mod03_rmse, linear_mod04_rmse, enet_mod01_rmse, enet_mod02_rmse, nn_mod_rmse, rf_mod_rmse, gbm_mod_rmse, svm_mod_rmse, mars_mod_rmse)
+
+model_rmse <- data.frame(Model = model_names, RMSE = rmse_values)
+model_rmse
+```
+
+Having the lowest RMSE value, Linear Model 4 is identified as the best performing model. This is the same as our previous Model 7 (interaction of the categorical inputs with all main effect and all pairwise interactions of continuous inputs).  
+

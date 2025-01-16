@@ -1,0 +1,415 @@
+---
+title: "PPG Paint Colors: Final Project"
+subtitle: "Part i: Exploration"
+author: "Rojin Taheri"
+output: html_document
+date: "2023-12-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Packages
+
+```{r}
+library(tidyverse)
+library(caret)
+```
+
+## Read Data
+
+```{r}
+df <- readr::read_csv("paint_project_train_data.csv", col_names = TRUE)
+```
+
+```{r}
+df %>% head()
+```
+
+```{r}
+dfii <- df %>% 
+  mutate(y = boot::logit( (response - 0) / (100 - 0) ) ) %>% 
+  select(R, G, B, Lightness, Saturation, Hue, y)
+dfii %>% head()
+```
+
+## Part i: Exploration  
+
+### 1) Visualize the distributions of variables in the data set  
+
+Visualizing counts for the categorical variables:  
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Lightness)) +
+  geom_bar(color = "black") +
+  ggtitle("Counts for Lightness")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Saturation)) +
+  geom_bar(color = "black") +
+  ggtitle("Counts for Saturation")
+```
+
+Visualizing histograms for the continuous variables:  
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = R)) +
+  geom_histogram(binwidth = 10, color = "black") +
+  ggtitle("Distribution of R")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = G)) +
+  geom_histogram(binwidth = 10, color = "black") +
+  ggtitle("Distribution of G")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = B)) +
+  geom_histogram(binwidth = 10, color = "black") +
+  ggtitle("Distribution of B")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Hue)) +
+  geom_histogram(binwidth = 5, color = "black") +
+  ggtitle("Distribution of Hue")
+```
+
+None of the distributions for the continuous variables (R, G, B, and Hue) seem Gaussian.  
+
+### 2) Condition the continuous variables based on the categorical variables  
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Lightness, y = R)) +
+  geom_boxplot() +
+  ggtitle("R Distribution by Lightness")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Saturation, y = R)) +
+  geom_boxplot() +
+  ggtitle("R Distribution by Saturation")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = as.factor(outcome), y = R)) +
+  geom_boxplot() +
+  ggtitle("R Distribution by Outcome") +
+  xlab("outcome")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Lightness, y = R)) +
+  geom_boxplot() +
+  ggtitle("G Distribution by Lightness")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Saturation, y = R)) +
+  geom_boxplot() +
+  ggtitle("G Distribution by Saturation")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = as.factor(outcome), y = R)) +
+  geom_boxplot() +
+  ggtitle("G Distribution by Outcome") +
+  xlab("outcome")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Lightness, y = R)) +
+  geom_boxplot() +
+  ggtitle("B Distribution by Lightness")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Saturation, y = R)) +
+  geom_boxplot() +
+  ggtitle("B Distribution by Saturation")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = as.factor(outcome), y = R)) +
+  geom_boxplot() +
+  ggtitle("B Distribution by Outcome") +
+  xlab("outcome")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Lightness, y = Hue)) +
+  geom_boxplot() +
+  ggtitle("Hue Distribution by Lightness")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Saturation, y = Hue)) +
+  geom_boxplot() +
+  ggtitle("Hue Distribution by Saturation")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = as.factor(outcome), y = Hue)) +
+  geom_boxplot() +
+  ggtitle("Hue Distribution by Outcome") +
+  xlab("outcome")
+```
+
+The R, G, and B variables do not seem to be evenly distributed based on the Lightness variable values. They are, however, more evenly distributed based on the Saturation variable values, and the summary statistics seem closer to each other. The R, G, and B variables' distributions based on the binary outcome is pretty much even. On the other hand, the Hue variable's distribution based on the Lightness and Saturation values, and also the binary outcome is more or less even.  
+
+### 3) Visualize the relationships between the continuous inputs  
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = R, y = G)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("Relationship between R and G")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = R, y = B)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("Relationship between R and B")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = R, y = Hue)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("Relationship between R and Hue")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = B, y = G)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("Relationship between B and G")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = B, y = Hue)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("Relationship between B and Hue")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = G, y = Hue)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("Relationship between G and Hue")
+```
+
+The R and G, R and B, and G and B variable pairs seem to be somehow correlated. However, the relationship between R and Hue, G and Hue, and B and Hue seem harder to perceive.  
+
+### 4) Visualize the relationships between the continuous outputs with respect to the continuous inputs depending on the categorical inputs
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = R, y = response)) +
+  geom_point() +
+  facet_wrap(~ Lightness) +
+  ggtitle("Relationship between Response and R Depending on Lightness")
+```
+
+```{r}
+dfii %>%
+  ggplot(mapping = aes(x = R, y = y)) +
+  geom_point() +
+  facet_wrap(~ Lightness) +
+  ggtitle("Relationship between Logit-transformed Response and R Depending on Lightness")
+```
+
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = R, y = response)) +
+  geom_point() +
+  facet_wrap(~ Saturation) +
+  ggtitle("Relationship between Response and R Depending on Saturation")
+```
+
+```{r}
+dfii %>%
+  ggplot(mapping = aes(x = R, y = y)) +
+  geom_point() +
+  facet_wrap(~ Saturation) +
+  ggtitle("Relationship between Logit-transformed Response and R Depending on Saturation")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = G, y = response)) +
+  geom_point() +
+  facet_wrap(~ Lightness) +
+  ggtitle("Relationship between Response and G Depending on Lightness")
+```
+
+```{r}
+dfii %>%
+  ggplot(mapping = aes(x = G, y = y)) +
+  geom_point() +
+  facet_wrap(~ Lightness) +
+  ggtitle("Relationship between Logit-transformed Response and G Depending on Lightness")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = G, y = response)) +
+  geom_point() +
+  facet_wrap(~ Saturation) +
+  ggtitle("Relationship between Response and G Depending on Saturation")
+```
+
+```{r}
+dfii %>%
+  ggplot(mapping = aes(x = G, y = y)) +
+  geom_point() +
+  facet_wrap(~ Saturation) +
+  ggtitle("Relationship between Logit-transformed Response and G Depending on Saturation")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = B, y = response)) +
+  geom_point() +
+  facet_wrap(~ Lightness) +
+  ggtitle("Relationship between Response and B Depending on Lightness")
+```
+
+```{r}
+dfii %>%
+  ggplot(mapping = aes(x = B, y = y)) +
+  geom_point() +
+  facet_wrap(~ Lightness) +
+  ggtitle("Relationship between Logit-transformed Response and B Depending on Lightness")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = B, y = response)) +
+  geom_point() +
+  facet_wrap(~ Saturation) +
+  ggtitle("Relationship between Response and B Depending on Saturation")
+```
+
+```{r}
+dfii %>%
+  ggplot(mapping = aes(x = B, y = y)) +
+  geom_point() +
+  facet_wrap(~ Saturation) +
+  ggtitle("Relationship between Logit-transformed Response and B Depending on Saturation")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Hue, y = response)) +
+  geom_point() +
+  facet_wrap(~ Lightness) +
+  ggtitle("Relationship between Response and Hue Depending on Lightness")
+```
+
+```{r}
+dfii %>%
+  ggplot(mapping = aes(x = Hue, y = y)) +
+  geom_point() +
+  facet_wrap(~ Lightness) +
+  ggtitle("Relationship between Logit-transformed Response and Hue Depending on Lightness")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Hue, y = response)) +
+  geom_point() +
+  facet_wrap(~ Saturation) +
+  ggtitle("Relationship between Response and Hue Depending on Saturation")
+```
+
+```{r}
+dfii %>%
+  ggplot(mapping = aes(x = Hue, y = y)) +
+  geom_point() +
+  facet_wrap(~ Saturation) +
+  ggtitle("Relationship between Logit-transformed Response and Hue Depending on Saturation")
+```
+
+There are clear trends in the relationships between the continuous outputs and the continuous inputs, and the relationships depend very much on the categorical inputs.  
+
+### 5) Visualize the behavior of the binary outcome with respect to the continuous and categorical inputs  
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = R, y = as.factor(outcome))) +
+  geom_point() +
+  ylab("outcome") +
+  ggtitle("Behavior of Outcome with Respect to R")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = G, y = as.factor(outcome))) +
+  geom_point() +
+  ylab("outcome") +
+  ggtitle("Behavior of Outcome with Respect to G")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = B, y = as.factor(outcome))) +
+  geom_point() +
+  ylab("outcome") +
+  ggtitle("Behavior of Outcome with Respect to B")
+```
+
+```{r}
+df %>%
+  ggplot(mapping = aes(x = Hue, y = as.factor(outcome))) +
+  geom_point() +
+  ylab("outcome") +
+  ggtitle("Behavior of Outcome with Respect to Hue")
+```
+
+```{r}
+df %>%
+  ggplot(mappin= aes(x = Lightness, fill = as.factor(outcome))) +
+  geom_bar(position = "fill") +
+  ggtitle("Behavior of Outcome with Respect to Lightness") +
+  labs(fill = "outcome")
+```
+
+```{r}
+df %>%
+  ggplot(mappin= aes(x = Saturation, fill = as.factor(outcome))) +
+  geom_bar(position = "fill") +
+  ggtitle("Behavior of Binary Outcome with Respect to Saturation") +
+  labs(fill = "outcome")
+```
+
