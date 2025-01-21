@@ -55,20 +55,27 @@ The repository is organized as follows:
 
 2. **Regression**:
    - Train models to predict the continuous variable `response`, saving trained models to `results/models/regression/`.
-   - Evaluate models using RMSE and save results to `results/metrics/`.
+   - Evaluate models using RMSE and save results to `results/metrics/regression_metrics_results.csv`.
 
 3. **Classification**:
    - Train models to classify the binary variable `outcome` and save trained models to `results/models/classification/`.
-   - Evaluate models using AUC-ROC and Accuracy metrics, saving results to `results/metrics/`.
+   - Evaluate models using AUC-ROC and Accuracy metrics, saving results to `results/metrics/classification_metrics_results.csv`.
 
 4. **Interpretation**:
    - Analyze model insights (e.g., variable importance, hardest/easiest combinations).
-   - Save plots and metrics to `results/plots/interpretation/` and `results/metrics/`.
+   - Save plots and metrics to `results/plots/interpretation/` and `results/metrics/interpretation/`.
 
 5. **Holdout Prediction**:
    - Use saved models to generate predictions for a holdout dataset.
    - Save predictions to `results/holdout/holdout_predictions.csv`.
 
+## Results
+The trained models were evaluated on a holdout dataset to assess their performance in predicting both the continuous paint property and paint color popularity. Both regression and classification tasks demonstrated strong predictive capabilities:
+
+- Regression Task: The best regression model achieved an impressive RMSE of 0.053 and an R² of 0.998, indicating exceptional accuracy in predicting the continuous paint property with minimal error.
+- Classification Task: The best classification model performed robustly, achieving an accuracy of 87%, an AUC-ROC of 0.91, and a high specificity of 92.6%, showcasing its reliability in predicting paint color popularity.
+
+Detailed performance metrics can be found in the `results/holdout/holdout_metrics.csv` file.
 
 ## How to Run the Project
 1. Clone the repository:
@@ -91,5 +98,3 @@ source("src/generate_synthetic_data.R")
    - `scripts/classification.R`
    - `scripts/interpretation.R`
    - `scripts/holdout_prediction.R`
-
-
