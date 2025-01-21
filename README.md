@@ -87,10 +87,10 @@ Detailed performance metrics can be found in the `results/holdout/holdout_metric
    install.packages(c("readr", "dplyr", "ggplot2", "tidyr", "tidyverse", "caret", "boot", "tibble", "reshape2", "coefplot", "loo", "randomForest", "glmnet", "e1071", "gbm", "nnet", "earth", "rstanarm", "pROC"))
    ```
 3. Add raw data to `data/raw/` (excluded from Git).
-If you do not have access to the raw data, you can generate synthetic data using the following script:
-```
-source("src/generate_synthetic_data.R")
-```
+    If you do not have access to the raw data, you can generate synthetic data using the following script:
+    ```
+    source("src/generate_synthetic_data.R")
+    ```
 
 4. Run workflow scripts in sequence:
    - `scripts/exploration.R`
