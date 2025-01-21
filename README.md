@@ -1,38 +1,44 @@
 # Exploring Paint Color Trends: Regression, Classification, and Interpretability
 
 ## Overview
-This project explores machine learning techniques to analyze and predict trends in paint color popularity based on a dataset of paint color attributes. The project involves the following tasks:
+This project explores machine learning techniques to analyze and predict trends in a paint color library from PPG Paints. The project involves the following tasks:
 
 1. **Exploration**: Understand the dataset through visualizations and statistical summaries.
-2. **Regression**: Predict a continuous response variable (`y`) representing a color's popularity score.
+2. **Regression**: Predict a continuous response variable representing a paint property.
 3. **Classification**: Predict a binary outcome (`event` or `non_event`) indicating whether a paint color is popular.
 4. **Interpretation**: Analyze model insights, including variable importance and prediction accuracy for different combinations of input features.
 5. **Holdout Prediction**: Use trained models to generate predictions for a holdout dataset.
+
+Note: The original dataset from PPG Paints is not included in this repository due to privacy constraints. However, a synthetic dataset can be generated for testing purposes using the included generate_synthetic_data.R script.
 
 ## Project Structure
 The repository is organized as follows:
 
 ```
-├── src/                  # Source scripts
-│   ├── load_data.R       # Script to load raw data
-│   ├── preprocess_data.R # Script to preprocess data for regression and classification
-│   ├── train_models.R    # Helper functions to train models
-│   ├── visualize.R       # Visualization utilities
-├── data/                 # Data files (excluded via .gitignore)
-│   ├── raw/              # Raw datasets
-│   ├── processed/        # Processed datasets
-├── scripts/              # Workflow scripts
-│   ├── exploration.R     # Data exploration workflow
-│   ├── regression.R      # Regression workflow
-│   ├── classification.R  # Classification workflow
-│   ├── interpretation.R  # Model interpretation workflow
-│   ├── holdout_prediction.R # Holdout set prediction workflow
-├── results/              # Outputs (excluded via .gitignore)
-│   ├── metrics/          # Evaluation metrics
-│   ├── models/           # Saved models
-│   ├── plots/            # Visualization outputs
-├── README.md             # Project description (this file)
-├── .gitignore            # Ignored files and directories
+├── src/
+│   ├── load_data.R
+│   ├── preprocess_data.R
+|   ├── generate_synthetic_data.R
+├── data/
+│   ├── raw/
+│   ├── processed/
+├── scripts/
+│   ├── exploration.R
+│   ├── regression.R
+│   ├── classification.R
+│   ├── interpretation.R
+│   ├── holdout_prediction.R
+├── results/
+│   ├── models/
+│   |   ├── regression/
+│   |   ├── classification/
+│   ├── plots/
+│   |   ├── exploration/
+│   |   ├── interpretation/
+│   ├── metrics/
+│   ├── holdout/
+├── README.md
+├── .gitignore
 ```
 
 ## Key Files and Scripts
@@ -40,8 +46,7 @@ The repository is organized as follows:
 ### Source Scripts (`src/`)
 - **`load_data.R`**: Loads raw data from the `data/raw/` directory.
 - **`preprocess_data.R`**: Preprocesses data for regression and classification tasks.
-- **`train_models.R`**: Helper functions for model training and evaluation.
-- **`visualize.R`**: Functions to create plots for exploration and interpretation.
+- **`generate_synthetic_data.R`**: Generates synthetic data to replicate testing scenarios.updated 
 
 ### Workflow Scripts (`scripts/`)
 1. **Exploration**:
@@ -49,12 +54,12 @@ The repository is organized as follows:
    - Save plots to `results/plots/exploration/`.
 
 2. **Regression**:
-   - Train models to predict the continuous variable `y`.
-   - Evaluate models using RMSE and save results to `results/metrics/regression_metrics_results.csv`.
+   - Train models to predict the continuous variable `response`, saving trained models to `results/models/regression/`.
+   - Evaluate models using RMSE and save results to `results/metrics/`.
 
 3. **Classification**:
-   - Train models to classify the binary variable `outcome`.
-   - Evaluate models using AUC-ROC and Accuracy metrics, saving results to `results/metrics/classification_metrics_results.csv`.
+   - Train models to classify the binary variable `outcome` and save trained models to `results/models/classification/`.
+   - Evaluate models using AUC-ROC and Accuracy metrics, saving results to `results/metrics/`.
 
 4. **Interpretation**:
    - Analyze model insights (e.g., variable importance, hardest/easiest combinations).
@@ -64,33 +69,21 @@ The repository is organized as follows:
    - Use saved models to generate predictions for a holdout dataset.
    - Save predictions to `results/holdout/holdout_predictions.csv`.
 
-## Results
-Key results are saved in the `results/` directory:
-
-1. **Metrics**:
-   - Regression and classification model performance metrics (e.g., RMSE, AUC, Accuracy).
-
-2. **Plots**:
-   - Visualizations for exploration, interpretation, and hardest/easiest cases.
-
-3. **Models**:
-   - Trained models for regression and classification tasks.
-
-4. **Holdout Predictions**:
-   - Final predictions for the holdout dataset.
 
 ## How to Run the Project
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/rojinta/color_prediction_ML
    ```
-
 2. Set up the required R environment and install dependencies:
    ```r
-   install.packages(c("tidyverse", "caret", "randomForest", "glmnet", "e1071", "gbm", "nnet", "earth", "rstanarm", "pROC"))
+   install.packages(c("readr", "dplyr", "ggplot2", "tidyr", "tidyverse", "caret", "boot", "tibble", "reshape2", "coefplot", "loo", "randomForest", "glmnet", "e1071", "gbm", "nnet", "earth", "rstanarm", "pROC"))
    ```
-
 3. Add raw data to `data/raw/` (excluded from Git).
+If you do not have access to the raw data, you can generate synthetic data using the following script:
+```
+source("src/generate_synthetic_data.R")
+```
 
 4. Run workflow scripts in sequence:
    - `scripts/exploration.R`
@@ -99,27 +92,4 @@ Key results are saved in the `results/` directory:
    - `scripts/interpretation.R`
    - `scripts/holdout_prediction.R`
 
-## Dependencies
-This project uses the following R packages:
-- `tidyverse`
-- `caret`
-- `randomForest`
-- `glmnet`
-- `e1071`
-- `gbm`
-- `nnet`
-- `earth`
-- `rstanarm`
-- `pROC`
-
-## Notes
-- The raw and processed data are excluded from the repository for privacy and storage reasons.
-- Pre-trained models and results can be regenerated by running the provided scripts.
-
-## Author
-**Rojin Taheri**
-
----
-
-For questions or issues, feel free to contact me or create an issue in the repository.
 
