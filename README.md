@@ -72,7 +72,7 @@ Detailed performance metrics can be found in the `results/holdout/holdout_metric
 ## How to Run the Project
 1. Clone the repository:
    ```bash
-   git clone https://github.com/rojinta/color_prediction_ML
+   git clone https://github.com/rojinta/color_prediction_ML.git
    ```
 2. Set up the required R environment and install dependencies:
    ```r
