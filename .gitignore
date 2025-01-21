@@ -4,7 +4,7 @@
 
 # Sensitive Data
 data/raw/train_data.csv
-data/raw/holdout_data
+data/raw/holdout_data.csv
 data/processed/regression_data.csv
 data/processed/classification_data.csv
 
