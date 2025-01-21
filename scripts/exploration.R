@@ -6,11 +6,10 @@ library(reshape2)
 
 # Load Required Scripts
 source("../src/load_data.R")
-source("../src/visualize.R")
 
 # Load Data
 # Set data path using an environment variable or default
-data_path <- Sys.getenv("DATA_PATH", "../data/raw/paint_project_train_data.csv")
+data_path <- Sys.getenv("DATA_PATH", "../data/raw/train_data.csv")
 training_data <- load_data(data_path)
 
 # Visualize Data
@@ -55,9 +54,9 @@ dist_plot <- plot_variable_distributions(training_data)
 heatmap_plot <- plot_correlation_heatmap(training_data)
 
 # Save Outputs
-dir.create("../results/plots", recursive = TRUE, showWarnings = FALSE)
-ggsave("../results/plots/distributions.png", dist_plot, width = 8, height = 6)
-ggsave("../results/plots/correlation_heatmap.png", heatmap_plot, width = 8, height = 6)
+dir.create("../results/plots/exploration", recursive = TRUE, showWarnings = FALSE)
+ggsave("../results/plots/exploration/distributions.png", dist_plot, width = 8, height = 6)
+ggsave("../results/plots/exploration/correlation_heatmap.png", heatmap_plot, width = 8, height = 6)
 
 # Example Relationship Plot
 plot_relationships(training_data, "R", "G")
