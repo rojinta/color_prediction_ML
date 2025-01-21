@@ -9,25 +9,17 @@ This project explores machine learning techniques to analyze and predict trends 
 4. **Interpretation**: Analyze model insights, including variable importance and prediction accuracy for different combinations of input features.
 5. **Holdout Prediction**: Use trained models to generate predictions for a holdout dataset.
 
-Note: The original dataset from PPG Paints is not included in this repository due to privacy constraints. However, a synthetic dataset can be generated for testing purposes using the included generate_synthetic_data.R script.
+Note: The original dataset from PPG Paints is not included in this repository due to privacy constraints. However, a synthetic dataset can be generated for testing purposes using the included `generate_synthetic_data.R` script.
 
 ## Project Structure
 The repository is organized as follows:
 
 ```
-├── src/
-│   ├── load_data.R
-│   ├── preprocess_data.R
-|   ├── generate_synthetic_data.R
 ├── data/
 │   ├── raw/
 │   ├── processed/
+├── src/
 ├── scripts/
-│   ├── exploration.R
-│   ├── regression.R
-│   ├── classification.R
-│   ├── interpretation.R
-│   ├── holdout_prediction.R
 ├── results/
 │   ├── models/
 │   |   ├── regression/
@@ -46,26 +38,26 @@ The repository is organized as follows:
 ### Source Scripts (`src/`)
 - **`load_data.R`**: Loads raw data from the `data/raw/` directory.
 - **`preprocess_data.R`**: Preprocesses data for regression and classification tasks.
-- **`generate_synthetic_data.R`**: Generates synthetic data to replicate testing scenarios.updated 
+- **`generate_synthetic_data.R`**: Generates synthetic data to replicate testing scenarios.
 
 ### Workflow Scripts (`scripts/`)
-1. **Exploration**:
+1. **`exploration.R`**:
    - Visualize distributions, correlations, and relationships between variables.
    - Save plots to `results/plots/exploration/`.
 
-2. **Regression**:
+2. **`regression.R`**:
    - Train models to predict the continuous variable `response`, saving trained models to `results/models/regression/`.
    - Evaluate models using RMSE and save results to `results/metrics/regression_metrics_results.csv`.
 
-3. **Classification**:
+3. **`classification.R`**:
    - Train models to classify the binary variable `outcome` and save trained models to `results/models/classification/`.
-   - Evaluate models using AUC-ROC and Accuracy metrics, saving results to `results/metrics/classification_metrics_results.csv`.
+   - Evaluate models using AUC-ROC and accuracy metrics, saving results to `results/metrics/classification_metrics_results.csv`.
 
-4. **Interpretation**:
+4. **`interpretation.R`**:
    - Analyze model insights (e.g., variable importance, hardest/easiest combinations).
    - Save plots and metrics to `results/plots/interpretation/` and `results/metrics/interpretation/`.
 
-5. **Holdout Prediction**:
+5. **`holdout_prediction.R`**:
    - Use saved models to generate predictions for a holdout dataset.
    - Save predictions to `results/holdout/holdout_predictions.csv`.
 
@@ -87,7 +79,7 @@ Detailed performance metrics can be found in the `results/holdout/holdout_metric
    install.packages(c("readr", "dplyr", "ggplot2", "tidyr", "tidyverse", "caret", "boot", "tibble", "reshape2", "coefplot", "loo", "randomForest", "glmnet", "e1071", "gbm", "nnet", "earth", "rstanarm", "pROC"))
    ```
 3. Add raw data to `data/raw/` (excluded from Git).
-    If you do not have access to the raw data, you can generate synthetic data using the following script:
+    - You can generate synthetic data using the following script:
     ```
     source("src/generate_synthetic_data.R")
     ```
