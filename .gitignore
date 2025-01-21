@@ -12,6 +12,7 @@ results/metrics/interpretation/easiest_classification.csv
 results/metrics/interpretation/hardest_regression.csv
 results/metrics/interpretation/hardest_classification.csv
 results/plots/interpretation
+results/holdout/holdout_predictions.csv
 
 # Environment Files
 .env
