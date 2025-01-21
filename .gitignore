@@ -1,0 +1,13 @@
+# R Environment Files
+.Rhistory
+.RData
+
+# Sensitive Data
+data/raw/train_data.csv
+data/raw/holdout_data
+data/processed/regression_data.csv
+data/processed/classification_data.csv
+
+# Environment Files
+.env
+.venv/
