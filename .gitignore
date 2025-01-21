@@ -7,6 +7,10 @@ data/raw/train_data.csv
 data/raw/holdout_data.csv
 data/processed/regression_data.csv
 data/processed/classification_data.csv
+results/metrics/easiest_regression.csv
+results/metrics/easiest_classification.csv
+results/metrics/hardest_regression.csv
+results/metrics/hardest_classification.csv
 
 # Environment Files
 .env
